@@ -20,7 +20,7 @@ class BM_Main_Window(QMainWindow):
 
         # initialise our search bar component
         self.searchbar = QLineEdit()
-        self.searchbar.setPlaceholderText("Search")
+        self.searchbar.setPlaceholderText("Search items (Use ';' to search for multiple items)")
 
         # initialise our table view component
         self.table_view = BM_Table_View()
@@ -171,8 +171,26 @@ class BM_Main_Window(QMainWindow):
         self.table_view.model.search(predicate)
 
         # update status bar
-        if predicate != "":
+        if predicate != "" and ';' not in predicate:
             self.statusBar().showMessage('Showing results for "%s"' % predicate)
+        elif predicate != "" and ';' in predicate:
+            message = "Showing results for "
+            predicates = predicate.split(';')
+
+            # append each predicate to the message
+            for i in range(len(predicates)):
+                # create suffix according to the current index
+                if i < len(predicates) - 2:
+                    suffix = ', '
+                elif i < len(predicates) - 1:
+                    suffix = ' and '
+                else:
+                    suffix = '.'
+
+                message += '"%s"%s' % (predicates[i], suffix)
+
+            # update status bar
+            self.statusBar().showMessage(message)
         else:
             self.statusBar().showMessage("Search finished...")
 
@@ -319,7 +337,7 @@ class BM_Main_Window(QMainWindow):
 
     # book menu methods
     def _edit_book(self):
-        if self.table_view.selected_row:
+        if self.table_view.selected_row is not None:
             # get the selected item
             selection = self.table_view.selected_item()
 
@@ -336,7 +354,7 @@ class BM_Main_Window(QMainWindow):
 
         # verify this action first
         if self.confirm("Are you sure?", 'Deleting "%s" is irreversible!' % selection["title"]):
-            if self.table_view.selected_row:
+            if self.table_view.selected_row is not None:
                 # exterminate this book!
                 self.table_view.model.book_mod(
                     "delete", target=selection["bid"], sid=self.table_view.selected_row)
@@ -348,7 +366,7 @@ class BM_Main_Window(QMainWindow):
     # client menu methods
     def _edit_client(self):
         # get the selected item
-        if self.table_view.selected_row:
+        if self.table_view.selected_row is not None:
             selection = self.table_view.selected_item()
 
             # adjust positioning
@@ -365,7 +383,7 @@ class BM_Main_Window(QMainWindow):
         # verify this action first
         if self.confirm("Are you sure?", 'Deleting "%s %s" is irreversible!' %
                         (selection["fname"], selection["lname"])):
-            if self.table_view.selected_row:
+            if self.table_view.selected_row is not None:
                 # delete this book
                 self.table_view.model.client_mod(
                     "delete", target=selection["cid"], sid=self.table_view.selected_row)

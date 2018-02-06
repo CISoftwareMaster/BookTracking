@@ -59,11 +59,28 @@ class BM_Table_Model(QAbstractTableModel):
 
             search_list = []
 
+            # multiple predicates are disabled by default
+            multiple_predicates = False
+
+            # make predicate lowercase
+            predicate = predicate.lower()
+
+            # support for multiple predicates
+            if ';' in predicate:
+                multiple_predicates = True
+                predicates = predicate.split(';')
+
             # modify the target list depending on the search flag
             if self.searching:
                 target_list = self.original
             else:
                 target_list = self.items
+
+            # update targets for multiple predicates
+            if multiple_predicates:
+                target_l = predicates
+            else:
+                target_l = predicate
 
             # selectively copy items to a temporary list
             for item in target_list:
@@ -76,9 +93,19 @@ class BM_Table_Model(QAbstractTableModel):
 
                 # search the scope
                 for s in item_scope:
-                    if predicate.lower() in s:
-                        search_list.append(item)
-                        break
+                    # check if the item is not in the search list
+                    if not item in search_list:
+                        if type(target_l) is str:
+                            if target_l in s:
+                                search_list.append(item)
+                                break
+
+                        elif type(target_l) is list:
+                            # try to match each term
+                            for _target in target_l:
+                                if _target in s:
+                                    search_list.append(item)
+                                    break
 
                 if not self.searching:
                     self.original.append(item)
@@ -122,7 +149,7 @@ class BM_Table_Model(QAbstractTableModel):
                 })
 
         elif mod_type == "edit":
-            if first_name and last_name and target and sid is not None:
+            if first_name and last_name and target != None and sid != None:
                 self.database.execute('UPDATE clients SET fname=:fname, lname=:lname WHERE cid=:target',
                                       target=target, fname=first_name, lname=last_name)
 
@@ -133,7 +160,7 @@ class BM_Table_Model(QAbstractTableModel):
                 })
 
         elif mod_type == "delete":
-            if target and sid is not None:
+            if target != None and sid != None:
                 # delete the client in the database
                 self.database.execute("DELETE FROM clients WHERE cid=:origin",
                                       origin=target)
@@ -174,7 +201,7 @@ class BM_Table_Model(QAbstractTableModel):
                 })
 
         elif mod_type == "edit":
-            if title and stock and target and sid is not None:
+            if title and stock and target != None and sid != None:
                 # update the database
                 self.database.execute('UPDATE books SET title=:title, stock=:stock WHERE bid=:origin',
                                       title=title, stock=stock, origin=target)
@@ -187,7 +214,7 @@ class BM_Table_Model(QAbstractTableModel):
                 }
 
         elif mod_type == "delete":
-            if target and sid is not None:
+            if target != None and sid != None:
                 # delete the book in the database
                 self.database.execute("DELETE FROM books WHERE bid=:origin",
                                       origin=target)
